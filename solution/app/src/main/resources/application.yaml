@@ -1,0 +1,44 @@
+spring:
+  application:
+    name: prod
+  profiles:
+    active: prod
+  docker:
+    compose:
+      file: solution/app/compose.yaml
+  ai:
+    mistralai:
+      chat:
+        enabled: true
+        options:
+          model: open-mistral-7b
+          temperature: 0.7
+          max-tokens: 512
+      embedding:
+        enabled: false
+      api-key: ${AI_KEY}
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+  r2dbc:
+    url: r2dbc:postgresql://${POSTGRES_HOST}:${POSTGRES_PORT:5432}/${POSTGRES_DB:prod}
+    username: ${POSTGRES_USER}
+    password: ${POSTGRES_PASSWORD}
+management:
+  endpoints:
+    web:
+      exposure:
+        include: ["prometheus"]
+server:
+  port: ${SERVER_PORT:8080}
+logging:
+  level:
+    org.springframework.web: ${LOGGING_LEVEL:INFO}
+    org.springframework.r2dbc: ${LOGGING_LEVEL:INFO}
+aws:
+  s3:
+    endpoint: http://${MINIO_HOST}:9000
+    accessKeyId: ${MINIO_ACCESS_KEY}
+    secretAccessKey: ${MINIO_SECRET_KEY}
+    bucket: bucket1

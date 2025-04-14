@@ -1,0 +1,50 @@
+name: prod3
+services:
+  postgres:
+    image: 'postgres:latest'
+    environment:
+      POSTGRES_DB: prod
+      POSTGRES_PASSWORD: REDACTED
+      POSTGRES_USER: server
+    volumes:
+      - .data/postgres:/var/lib/postgresql/data
+    ports:
+      - '5532:5432'
+  prometheus:
+    image: prom/prometheus:latest
+    user: root
+    container_name: prometheus
+    ports:
+      - "9092:9090"
+    volumes:
+      - .data/prometheus.yml:/etc/prometheus/prometheus.yml
+      - .data/prometheus:/prometheus
+  redis:
+    image: redis:latest
+    ports:
+      - "6380:6379"
+    volumes:
+      - .data/redis:/root/redis
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    ports:
+      - "3002:3000"
+    restart: unless-stopped
+    volumes:
+      - .data/grafana/provisioning/datasources:/etc/grafana/provisioning/datasources
+      - .data/grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards
+  minio:
+    image: minio/minio:latest
+    container_name: minio
+    ports:
+      - "9000:9000"
+    environment:
+      MINIO_ACCESS_KEY: REDACTED
+      MINIO_SECRET_KEY: REDACTED
+    volumes:
+      - .data/minio:/data
+    command: server /data

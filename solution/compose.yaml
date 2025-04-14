@@ -1,0 +1,72 @@
+services:
+  postgres:
+    image: 'postgres:latest'
+    container_name: postgres
+    volumes:
+      - .data/postgres:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: prod
+      POSTGRES_PASSWORD: REDACTED
+      POSTGRES_USER: server
+    restart: unless-stopped
+    ports:
+      - '5632:5432'
+  minio:
+    image: minio/minio:latest
+    container_name: minio
+    ports:
+      - "9000:9000"
+    environment:
+      MINIO_ACCESS_KEY: REDACTED
+      MINIO_SECRET_KEY: REDACTED
+    volumes:
+      - .data/minio:/data
+    command: server /data
+  redis:
+    image: redis:latest
+    container_name: redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - .data/redis:/root/redis
+  web:
+    build: app
+    container_name: app
+    environment:
+      POSTGRES_DB: prod
+      POSTGRES_PASSWORD: REDACTED
+      POSTGRES_USER: server
+      POSTGRES_HOST: postgres
+      REDIS_HOST: redis
+      MINIO_HOST: minio
+      MINIO_ACCESS_KEY: REDACTED
+      MINIO_SECRET_KEY: REDACTED
+      AI_KEY: REDACTED
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgres
+      - minio
+      - redis
+  prometheus:
+    image: prom/prometheus:latest
+    user: root
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - .data/prometheus:/prometheus
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
+    volumes:
+      - ./grafana/provisioning/datasources:/etc/grafana/provisioning/datasources
+      - ./grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards
